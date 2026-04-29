@@ -16,7 +16,7 @@ public class Counter : MonoBehaviour
 
     public void UpdateCount(int count)
     {
-        counterText.text = $"Objects detected: {count}";
+        counterText.text = $"Tools detected: {count}";
         // counterText.enabled = true;
     }
 

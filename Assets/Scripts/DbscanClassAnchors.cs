@@ -123,6 +123,7 @@ public class DbscanClassAnchors : MonoBehaviour
         public int Uid;
         public int ClassId;
         public ARAnchor Anchor;
+        public GameObject Visual;
 
         public float3 LastCentroid;
         public int LastCount;
@@ -190,7 +191,7 @@ public class DbscanClassAnchors : MonoBehaviour
 
     private void Update()
     {
-        // --- NEW: visualization toggle from UI ---
+        // --- visualization toggle from UI ---
         ApplyVisibility(ui.ShowVisualizations());
 
         if (!autoRun) return;
@@ -546,7 +547,7 @@ public class DbscanClassAnchors : MonoBehaviour
         anchor.name = $"Cluster_{t.Uid}_Class{t.ClassId}";
         anchor.transform.SetParent(anchorsRoot, true);
 
-        SpawnVisualForClass(t.ClassId, anchor.transform);
+        t.Visual = SpawnVisualForClass(t.ClassId, anchor.transform);
 
         _tracked[t.Uid] = t;
         return t;
@@ -564,7 +565,7 @@ public class DbscanClassAnchors : MonoBehaviour
         anchor.name = $"Cluster_{t.Uid}_Class{t.ClassId}";
         anchor.transform.SetParent(anchorsRoot, true);
 
-        SpawnVisualForClass(t.ClassId, anchor.transform);
+        t.Visual = SpawnVisualForClass(t.ClassId, anchor.transform, t.Visual);
     }
 
     private void DeleteTrackedCluster(int uid)
@@ -624,8 +625,11 @@ public class DbscanClassAnchors : MonoBehaviour
     // ----------------------------
     // Prefab spawn
     // ----------------------------
-    private void SpawnVisualForClass(int classId, Transform parent)
+    private GameObject SpawnVisualForClass(int classId, Transform parent, GameObject oldVisualToReplace = null)
     {
+        if (oldVisualToReplace != null)
+            Destroy(oldVisualToReplace);
+
         GameObject prefab = null;
         float scale = 0.1f;
 
@@ -645,7 +649,7 @@ public class DbscanClassAnchors : MonoBehaviour
             case 11: prefab = wrenchPrefab; scale = wrenchVisualScale; break;
         }
 
-        if (prefab == null) return;
+        if (prefab == null) return null;
 
         var visual = Instantiate(prefab, parent);
         visual.transform.localPosition = Vector3.zero;
@@ -654,16 +658,14 @@ public class DbscanClassAnchors : MonoBehaviour
 
         // Class-specific adjustments, only for visualization (not affecting anchor logic)
         // Customized based on models uploaded
-        if (prefab == knifePrefab)
-        {
-            // e.g. rotate knife to point downwards
+        if (prefab == knifePrefab) // e.g. rotate knife to point downwards
             visual.transform.localRotation = Quaternion.Euler(90, 0, 90);
-        }
-        if (prefab == drillPrefab)
-        {
-            // e.g. rotate knife to point downwards
+        if (prefab == drillPrefab) // e.g. rotate drill to point downwards
             visual.transform.localRotation = Quaternion.Euler(0, 90, 0);
-        }
+
+        visual.SetActive(_lastVizState);
+
+        return visual;
     }
 
     // ----------------------------
@@ -839,20 +841,22 @@ public class DbscanClassAnchors : MonoBehaviour
 
     public void ApplyVisibility(bool show)
     {
-        // Toggle the whole root (fastest). If you prefer per-anchor, see note below.
-        // if (anchorsRoot != null)
-            // anchorsRoot.gameObject.SetActive(show);
+        _lastVizState = show;
 
         foreach (var kv in _tracked)
         {
             var t = kv.Value;
-            if (t?.Anchor == null) continue;
+            if (t == null) continue;
 
-            var go = t.Anchor.gameObject;
-            go.SetActive(show);
+            if (t.Visual != null)
+                t.Visual.SetActive(show);
+            else if (t.Anchor != null)
+            {
+                // fallback: if visual wasn't tracked for some reason, toggle children
+                for (int i = 0; i < t.Anchor.transform.childCount; i++)
+                    t.Anchor.transform.GetChild(i).gameObject.SetActive(show);
+            }
         }
-
-        _lastVizState = show;
     }
 
     // ----------------------------
