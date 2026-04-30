@@ -2748,7 +2748,7 @@ MonoBehaviour:
   ui: {fileID: 734659736}
   Counter: {fileID: 1311298055}
   runEveryNFrames: 30
-  detectionCutoff: 100
+  detectionCutoff: 0
 --- !u!114 &1842008832
 MonoBehaviour:
   m_ObjectHideFlags: 0

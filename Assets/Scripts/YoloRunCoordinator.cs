@@ -16,7 +16,7 @@ public class YoloRunCoordinator : MonoBehaviour
     [Tooltip("Run YOLO + raycast every N frames. 1 = every frame.")]
     [SerializeField, Range(1, 60)] private int runEveryNFrames = 30;
     [Tooltip("Max detections to run. If 0 , never stop detecting.")]
-    [SerializeField, Range(1, 1000)] private int detectionCutoff = 100;
+    [SerializeField, Range(0, 1000)] private int detectionCutoff = 100;
 
     private int _detectionsRan = 0;
 
@@ -58,6 +58,7 @@ public class YoloRunCoordinator : MonoBehaviour
         {
             yoloSource.HideAllBoxes();
             hitVisualizer.ClearAll();
+            Counter.UpdateText("Detection complete.");
             Debug.Log("Detection completed.");
             return;
         }
